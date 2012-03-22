@@ -8,6 +8,12 @@
 # Java class files
 *.class
 
+# Python Generated files
+*.pyc
+
+# Bash Generated files
+*~
+
 # generated files
 android/bin/
 android/gen/
