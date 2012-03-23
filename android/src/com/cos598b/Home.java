@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -27,6 +28,10 @@ import android.widget.TextView;
 
 
 public class Home extends Activity {
+	private final int time_granularity = 60; // time granularity for location updates (in seconds)
+	private final int dist_granularity = 2;  // distance granularity for location updates (in metres)
+	
+	
 	private boolean isAvailableWiFi() {
 		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo[] ni = cm.getAllNetworkInfo();
@@ -127,7 +132,23 @@ public class Home extends Activity {
 		
 		@Override
 		protected void onHandleIntent(Intent intent) {
+			LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 			
+			// create new listener
+			LocationListener listener = new LocationListener() {
+				public void onLocationChanged(Location location) {
+					
+				}
+				
+				public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+			    public void onProviderEnabled(String provider) {}
+
+			    public void onProviderDisabled(String provider) {}
+			
+		    };
+		    
+		    lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, time_granularity*1000, dist_granularity, listener);
 		}
 	}
 	/* Get best known location */
