@@ -25,12 +25,11 @@ import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.TextView;
+import com.cos598b.Consts;
 
 
 public class Home extends Activity {
-	private final int time_granularity = 60; // time granularity for location updates (in seconds)
-	private final int time_diff = 5;         // time difference between two GPS readings for direction calculation
-	private final int dist_granularity = 2;  // distance granularity for location updates (in metres)
+	
 	
 	private boolean isAvailableWiFi() {
 		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -125,55 +124,6 @@ public class Home extends Activity {
 		*/
 	}
 
-	private class LocationTracker extends IntentService {
-		public LocationTracker() {
-			super("LocationTracker");
-		}
-		
-		// on creating the service
-		@Override
-		protected void onHandleIntent(Intent intent) {
-			LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-			
-			// create new listener
-			LocationListener listener = new LocationListener() {
-				public void onLocationChanged(Location location) {
-					Log.d("A", "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
-				}
-				
-				public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-			    public void onProviderEnabled(String provider) {}
-
-			    public void onProviderDisabled(String provider) {}
-			
-		    };
-		    
-			// create another new listener
-			LocationListener listener2 = new LocationListener() {
-				public void onLocationChanged(Location location) {
-					Log.d("B", "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
-				}
-				
-				public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-			    public void onProviderEnabled(String provider) {}
-
-			    public void onProviderDisabled(String provider) {}
-			
-		    };
-		    
-		    lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, time_granularity*1000, dist_granularity, listener);
-		    long timeout = System.currentTimeMillis() + (time_diff * 1000);
-		    while (System.currentTimeMillis() < timeout) { // wait time_diff seconds
-		    	synchronized(this) {
-		    		try { wait(timeout - System.currentTimeMillis()); } catch(Exception e) {}
-		    	}
-		    }
-		    lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, time_granularity*1000, dist_granularity, listener2);
-		    
-		}
-	}
 	/* Get best known location */
 	private Location getLocation() {
 		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -204,11 +154,14 @@ public class Home extends Activity {
 		super.onCreate(savedInstanceState);
 		TextView tv = new TextView(this);
 		
+		/*
 		Location location = getLocation();
 		Log.d("A", "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
-		
+		*/
+		startService(new Intent(this, LocationTracker.class));
 		tv.setText("Connected to wifi");
 		setContentView(tv);
+		
 		
 	}
 
