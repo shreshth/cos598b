@@ -2,7 +2,11 @@
  * TO DOS:
  * 1. Popup window for turning GPS on
  * 2. If user doesn't turn GPS on, then quit?
- * 3. If GPS not returning a location (e.g. indoors), then?
+ * 3. If GPS not returning a location (e.g. indoors), then? In this case, it just ignores all this data.
+ * 4. So far, only checking if Wifi is *connected*. Should check if any open Wifi is available?
+ * 5. If there is no movement in 5-second span, we can't detect direction. Currently, it uses the lat/long 
+ *    from the previous 60 second span (less accurate since more motion in 60 seconds than 5). Is this okay, 
+ *    or should we just discard that data?
  */
 
 package com.cos598b;
@@ -160,9 +164,6 @@ public class Home extends Activity {
 		*/
 		startService(new Intent(this, LocationTracker.class));
 		tv.setText("Connected to wifi");
-		setContentView(tv);
-		
-		
+		setContentView(tv);		
 	}
-
 }
