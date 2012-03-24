@@ -2,7 +2,7 @@
  * TO DOS:
  * 1. Popup window for turning GPS on
  * 2. If user doesn't turn GPS on, then quit?
- * 
+ * 3. If GPS not returning a location (e.g. indoors), then?
  */
 
 package com.cos598b;
@@ -29,8 +29,8 @@ import android.widget.TextView;
 
 public class Home extends Activity {
 	private final int time_granularity = 60; // time granularity for location updates (in seconds)
+	private final int time_diff = 5;         // time difference between two GPS readings for direction calculation
 	private final int dist_granularity = 2;  // distance granularity for location updates (in metres)
-	
 	
 	private boolean isAvailableWiFi() {
 		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -130,6 +130,7 @@ public class Home extends Activity {
 			super("LocationTracker");
 		}
 		
+		// on creating the service
 		@Override
 		protected void onHandleIntent(Intent intent) {
 			LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -137,7 +138,21 @@ public class Home extends Activity {
 			// create new listener
 			LocationListener listener = new LocationListener() {
 				public void onLocationChanged(Location location) {
-					
+					Log.d("A", "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
+				}
+				
+				public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+			    public void onProviderEnabled(String provider) {}
+
+			    public void onProviderDisabled(String provider) {}
+			
+		    };
+		    
+			// create another new listener
+			LocationListener listener2 = new LocationListener() {
+				public void onLocationChanged(Location location) {
+					Log.d("B", "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
 				}
 				
 				public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -149,6 +164,14 @@ public class Home extends Activity {
 		    };
 		    
 		    lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, time_granularity*1000, dist_granularity, listener);
+		    long timeout = System.currentTimeMillis() + (time_diff * 1000);
+		    while (System.currentTimeMillis() < timeout) { // wait time_diff seconds
+		    	synchronized(this) {
+		    		try { wait(timeout - System.currentTimeMillis()); } catch(Exception e) {}
+		    	}
+		    }
+		    lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, time_granularity*1000, dist_granularity, listener2);
+		    
 		}
 	}
 	/* Get best known location */
