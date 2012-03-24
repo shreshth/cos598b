@@ -10,7 +10,7 @@
     function addpoints(map) {
         {% for point in points %}
             var location1 = new google.maps.LatLng({{point.location.lat}}, {{point.location.lon}});
-            var location2 = new google.maps.LatLng({{point.location.lat}} + {{point.delta.lat}} + 1, {{point.location.lon}} + {{point.delta.lon}} + 1);
+            var location2 = new google.maps.LatLng({{point.location.lat}} + {{point.delta.lat}}, {{point.location.lon}} + {{point.delta.lon}});
             var path = [location1, location2];
             var color = ({{point.time}} > 0) ? "#2500DB" : "#FF0000";
             (new google.maps.Polyline({
