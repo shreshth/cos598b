@@ -10,20 +10,26 @@ class HomePage(webapp.RequestHandler):
         self.response.out.write('Coming soon...')
 
 class AddData(webapp.RequestHandler):
+    def get(self):
+        self.error(500)
     def post(self):
-        lat = self.request.get('lat')
-        lng = self.request.get('lat')
-        lat_delta = self.request.get('lat_delta')
-        lng_delta = self.request.get('lat_delta')
-        time = int(self.request.get('time'))
+        lat = str.split(str(self.request.get('lat')),',')
+        lng = str.split(str(self.request.get('lng')),',')
+        lat_delta = str.split(str(self.request.get('lat_delta')),',')
+        lng_delta = str.split(str(self.request.get('lng_delta')),',')
+        time = str.split(str(self.request.get('time')),',')
         user_id = self.request.get('user_id')
-        location = db.GeoPt(lat, lng)
-        delta = db.GeoPt(lat_delta, lng_delta)
-        point = entities.Point(location=location, delta=delta, time=time, user_id = user_id)
-        point.put()
+        if ((len(lat) != len (lng)) or (len(lat) or len (lat_delta)) or (len(lat) != len (lng_delta)) or (len(lat) != len (time))):
+            self.error(400)
+        for i in range(len(lat)):
+            location = db.GeoPt(lat[i], lng[i])
+            delta = db.GeoPt(lat_delta[i], lng_delta[i])
+            point = entities.Point(location=location, delta=delta, time=int(time[i]), user_id = user_id)
+            point.put()
 
 application = webapp.WSGIApplication([('/', HomePage),
-                                      ('/add_data', AddData)], debug=True)
+                                      ('/add_data', AddData)],
+                                      debug=True)
 
 def main():
     run_wsgi_app(application)
