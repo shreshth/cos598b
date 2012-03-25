@@ -1,0 +1,4 @@
+cron:
+- description: daily machine learning
+  url: /learn
+  schedule: every day 00:00

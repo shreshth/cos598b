@@ -13,5 +13,18 @@ handlers:
 - url: /images
   static_dir: images
 
-- url: /.*
+- url: /
   script: home.py
+
+- url: /add_data
+  script: add_data.py
+
+- url: /map
+  script: map.py
+
+- url: /learn
+  script: ai.py
+  login: admin
+
+- url: /predict
+  script: ai.py
