@@ -7,20 +7,11 @@
     <script type="text/javascript" src="js/map.js"></script>
   </head>
   <script type="text/javascript">
-    function addpoints(map) {
-        {% for point in points %}
-            var location1 = new google.maps.LatLng({{point.location.lat}}, {{point.location.lon}});
-            var location2 = new google.maps.LatLng({{point.location.lat}} + {{point.delta.lat}}, {{point.location.lon}} + {{point.delta.lon}});
-            var path = [location1, location2];
-            var color = ({{point.time}} > 0) ? "#2500DB" : "#FF0000";
-            (new google.maps.Polyline({
-                path: path,
-                strokeColor: color,
-                strokeOpacity: 1.0,
-                strokeWeight: 2,
-            })).setMap(map);
-        {% endfor %}
-    }
+    points = [
+    {% for point in points %}
+    [{{point.location.lat}}, {{point.location.lon}}, {{point.angle}}, {% if point.wifi %} true {% else %} false {% endif %}],
+    {% endfor %}
+    ];
   </script>
   <body onload="initialize()">
     <div id="map_canvas" style="width:100%; height:100%"></div>
