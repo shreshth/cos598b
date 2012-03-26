@@ -4,11 +4,9 @@
  * 2. If user doesn't turn GPS on, then quit?
  * 3. If GPS not returning a location (e.g. indoors), then? In this case, it just ignores all this data.
  * 4. So far, only checking if Wifi is *connected*. Should check if any open Wifi is available?
- * 5. If there is movement in 60 seconds, but no movement in 5-second span, we can't detect direction. Currently, it uses the lat/long 
+ * 5. If there is no movement in 5-second span, we can't detect direction. Currently, it uses the lat/long 
  *    from the previous 60 second span (less accurate since more motion in 60 seconds than 5). Is this okay, 
  *    or should we just discard that data?
- * 6. What if we go out of range of GPS and then get WiFi (e.g. enter a building and then get WiFi). In this
- * 	  case, we wouldn't get any location updates, and will not be capture the fact that WiFi was found.
  */
 
 package com.cos598b;
@@ -31,8 +29,6 @@ import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import com.cos598b.Consts;
 
 
@@ -166,7 +162,6 @@ public class Home extends Activity {
 		Location location = getLocation();
 		Log.d("A", "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
 		*/
-		Toast.makeText(getApplicationContext(), "Start"+2.3, Toast.LENGTH_SHORT).show();
 		startService(new Intent(this, LocationTracker.class));
 		tv.setText("Connected to wifi");
 		setContentView(tv);		
