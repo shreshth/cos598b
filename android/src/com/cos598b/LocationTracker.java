@@ -9,19 +9,66 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
+import android.widget.Toast;
+
 import com.cos598b.Consts;
 
 public class LocationTracker extends IntentService {
-	private double[] lat = new double[Consts.num_loc_steps];
-	private double[] lng = new double[Consts.num_loc_steps];
-	private double[] lat_delta = new double[Consts.num_loc_steps];
-	private double[] lng_delta = new double[Consts.num_loc_steps];
-	private boolean[] wifi_found = new boolean[Consts.num_loc_steps];
+	/* 
+	 * class for data points 
+	 */
+	public class DataPoint {
+		private double lat;
+		private double lng;
+		private double lat_delta;
+		private double lng_delta;
+		private boolean wifi_found;
+		private double timestamp;
+		private int steps_till_wifi;
+	
+		public DataPoint(double lat, double lng, double lat_delta, double lng_delta, boolean wifi_found, double timestamp) {
+			this.lat = lat;
+			this.lng = lng;
+			this.lat_delta = lat_delta;
+			this.lng_delta = lng_delta;
+			this.wifi_found = wifi_found;
+			this.timestamp = timestamp;
+		}
+		
+		public double getLat() { return this.lat; }
+		public double getLng() { return this.lng; }
+		public double getLatDelta() { return this.lat_delta; }
+		public double getLngDelta() { return this.lng_delta; }
+		public boolean getWifiFound() { return this.wifi_found; }
+		public double getTimestamp() { return this.timestamp; }
+		public void setStepsTillWifi(int n) { this.steps_till_wifi = n; }
+	}
+	
+	/* 
+	 * class variables 
+	 */
+	/* location model - Markov chain of 10 steps */
+	private DataPoint[] loc_steps = new DataPoint[Consts.num_loc_steps]; // Markov chain for tracking movement
 	private double lat_last;
 	private double lng_last;
 	
-	/* is WiFi connected */
+	/* location tracking */
+	private LocationListener listener;
+	private LocationListener listener2;
+	private LocationManager lm;
+	
+	/* buffer for sending data to backend */
+	private DataPoint[] loc_buf = new DataPoint[Consts.buf_size];
+	
+	/*
+	 ************************************ FUNCTIONS **********************************
+	 */
+	
+	/* 
+	 * is WiFi connected 
+	 */
 	private boolean isConnectedWiFi() {
 		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo[] ni = cm.getAllNetworkInfo();
@@ -33,14 +80,61 @@ public class LocationTracker extends IntentService {
 		return false;
 	}
 	
-	/* is WiFi found */
+	/* 
+	 * is WiFi found 
+	 */
 	private boolean isFoundWiFi() {
 		return isConnectedWiFi();
 	}
 	
-	/* send data to back-end */
-	private void sendData(double lat, double lng, double lat_delta, double lng_delta, int steps_till_wifi) {
+	private boolean sendData(DataPoint[] point_send) {
 		
+		return true;
+	}
+	
+	/* 
+	 * send data to back-end 
+	 */
+	private void bufferData(DataPoint point_buf) {
+		int i = 0;
+		
+		if (point_buf == null) return;
+		if (point_buf.getLatDelta() == 0 && point_buf.getLngDelta() == 0) return; // corner case if first point ever is added and lat/lng_last were same as lat/lng_add
+				
+		// add to buffer in following order of priority
+		// 1. add to any null spot in the buffer
+		// 2. otherwise, add to oldest spot where WiFi wasn't found
+		// 3. otherwise, add to oldest spot
+		boolean found = false;
+		int min_index_no_wifi = -1; // 2
+		double min_time_no_wifi = System.currentTimeMillis();
+		int min_index = 0; // 3
+		double min_time = min_time_no_wifi;
+		for (i = 0; i < Consts.buf_size; i++) { 
+			if (loc_buf[i] == null) { loc_buf[i] = point_buf; found = true; break; } // 1
+			if (!loc_buf[i].getWifiFound() && loc_buf[i].getTimestamp() < min_time_no_wifi) { // 2
+				min_time_no_wifi = loc_buf[i].getTimestamp();
+				min_index_no_wifi = i;
+			}
+			if (loc_buf[i].getTimestamp() < min_time) { // 3
+				min_time = loc_buf[i].getTimestamp();
+				min_index = i;
+			}
+			
+		}
+		if (!found && min_index_no_wifi != -1) { // 2
+			loc_buf[min_index_no_wifi] = point_buf;
+			found = true;
+		}
+		if (!found) { // 3
+			loc_buf[min_index] = point_buf;
+			found = true;
+		}
+		
+		// try to empty out buffer, while WiFi is connected
+		if (isConnectedWiFi()) {
+			sendData(loc_buf);
+		}
 	}
 	
 	/* 
@@ -48,67 +142,67 @@ public class LocationTracker extends IntentService {
 	 * new points added at 0th index
 	 * old points removed from (num_loc_steps-1)th index
 	 */
-	private void addDataPoint(double lat_add, double lng_add) {
+	private void addDataPoint(double lat_add, double lng_add) {	
 		// store the data point to be removed
-		double lat_temp = lat[Consts.num_loc_steps-1];
-		double lng_temp = lng[Consts.num_loc_steps-1];
-		double lat_delta_temp = lat_delta[Consts.num_loc_steps-1];
-		double lng_delta_temp = lng_delta[Consts.num_loc_steps-1];
-		boolean wifi_found_temp = wifi_found[Consts.num_loc_steps-1];
+		DataPoint point_temp = loc_steps[Consts.num_loc_steps-1];
 		int steps_till_wifi = Integer.MAX_VALUE;
-		if (wifi_found_temp) steps_till_wifi = 0;
+		if (point_temp.getWifiFound()) steps_till_wifi = 0;
 		
 		// move stuff up
 		for (int i = Consts.num_loc_steps-1; i > 0; i--) {
-			lat[i] = lat[i-1];
-			lng[i] = lng[i-1];
-			lat_delta[i] = lat_delta[i-1];
-			lng_delta[i] = lng_delta[i-1];
-			wifi_found[i] = wifi_found[i-1];
-			if (wifi_found[i-1] && steps_till_wifi == Integer.MAX_VALUE) steps_till_wifi = Consts.num_loc_steps - (i-1); // first point thereafter that Wifi was found
+			loc_steps[i] = loc_steps[i-1];
+			if (loc_steps[i-1] != null && point_temp != null) {
+				if (loc_steps[i-1].getWifiFound() && steps_till_wifi == Integer.MAX_VALUE) steps_till_wifi = Consts.num_loc_steps - (i-1); // first point thereafter that Wifi was found
+			}
 		}
 		// at this point, steps_till_wifi is the number of steps till wifi was found (or Integer.MAX_VALUE if not found)		
+		if (point_temp != null) { point_temp.setStepsTillWifi(steps_till_wifi); }
 		
 		// add new point
-		lat[0] = lat_add;
-		lng[0] = lng_add;
-		if (lat_add == lat_last && lng_add == lng_last) { // in case no movement in the 5 second span, use last-to-last location (likely to be less accurate)
-			lat_delta[0] = lat[0] - lat[1];
-			lat_delta[0] = lng[0] - lat[2];
+		if (lat_add == lat_last && lng_add == lng_last && loc_steps[1] != null) { // in case no movement in the 5 second span, use last-to-last location (likely to be less accurate)
+			DataPoint point_add = new DataPoint(lat_add, lng_add, lat_add - loc_steps[1].getLat(), lng_add - loc_steps[1].getLng(), isFoundWiFi(), System.currentTimeMillis());
+			loc_steps[0] = point_add;
 		}
 		else {
-			lat_delta[0] = lat[0] - lat_last;
-			lat_delta[0] = lng[0] - lng_last;
+			DataPoint point_add = new DataPoint(lat_add, lng_add, lat_add - lat_last, lng_add - lng_last, isFoundWiFi(), System.currentTimeMillis());
+			loc_steps[0] = point_add;
 		}
-		wifi_found[0] = isFoundWiFi();
 		
 		// send data to back-end
-		sendData(lat_temp, lng_temp, lat_delta_temp, lng_delta_temp, steps_till_wifi);
+		bufferData(point_temp);
 	}
 	
+	/*
+	 *************************** MAIN CLASS FUNCTIONS ********************************
+	 */
+	
+	/*
+	 * constructor
+	 */
 	public LocationTracker() {
 		super("LocationTracker");
 	}
 	
-	// on creating the service
+	/*
+	 * on creating the service
+	 */
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+		lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		final long startTime = System.currentTimeMillis();
 		
-		/* 
-		 * Advantages of using Listeners
-		 * 1. If no movement, then don't cause updates (e.g. sitting in office)
-		 * 2. If no GPS, then no updates (e.g. underground, inside) - hence, forces us to only consider locations 
-		 *    where the 3G vs. WiFi is useful (i.e. outside, walking in between buildings etc.)
-		 *    
-		 * Assumption: If there is movement in the 60 second span, it will trigger updates in both listeners
-		 * independently of whether there was movement in the 5 second span. NEED TO TEST THIS XXX
-		 */
+		// if GPS is disabled, ask user to turn it on // XXX : 1
+		if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+			Intent gpsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+			startActivity(gpsIntent);
+		}
+		
 		// create new listener
-		LocationListener listener = new LocationListener() {			
+		listener = new LocationListener() {			
 			public void onLocationChanged(Location location) {
-				Log.d("A", "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
+				CharSequence text = "A: " + "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude();
+				Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+				//Log.d("A", "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
 				lat_last = location.getLatitude();
 				lng_last = location.getLongitude();
 			}
@@ -122,8 +216,10 @@ public class LocationTracker extends IntentService {
 	    };
 	    
 		// create another new listener (for the 5-second delay required for finding the direction)
-		LocationListener listener2 = new LocationListener() {
+		listener2 = new LocationListener() {
 			public void onLocationChanged(Location location) {
+				CharSequence text = "B: " + "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude();
+				Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
 				Log.d("B", "Time: " + ((System.currentTimeMillis()-startTime)/1000) + "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
 				addDataPoint(location.getLatitude(), location.getLongitude());
 			}
@@ -148,16 +244,22 @@ public class LocationTracker extends IntentService {
 	    
 	    
 	    // run for 100 seconds // DEBUG
-	    timeout = System.currentTimeMillis() + (100*1000);
-	    while(System.currentTimeMillis() < timeout) {}
-	    
-	    
+	    timeout = System.currentTimeMillis() + (150*1000);
+	    while(System.currentTimeMillis() < timeout) {}   
 	}
 	
+	/*
+	 * on destroying the service
+	 */
 	// TESTING ONLY //DEBUG
 	@Override
 	public void onDestroy() {
-		Log.d("Close", "Shutting service");
+		lm.removeUpdates(listener);
+		lm.removeUpdates(listener2);
+		lm = null;
+		
+		Toast.makeText(getApplicationContext(), "End" + "A" + 2, Toast.LENGTH_SHORT).show();
+		//Log.d("Close", "Shutting service");
 		super.onDestroy();
 	}
 }
