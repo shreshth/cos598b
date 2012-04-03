@@ -16,7 +16,6 @@ package com.cos598b;
 import java.lang.reflect.Method;
 
 import android.app.Activity;
-import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Criteria;
@@ -32,8 +31,6 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.cos598b.Consts;
 
 
 public class Home extends Activity {
@@ -154,21 +151,18 @@ public class Home extends Activity {
 		return location;
 		//return lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 	}
+   
 	
-	
-	/** Called when the activity is first created. */
-	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		TextView tv = new TextView(this);
-		
+
 		/*
 		Location location = getLocation();
 		Log.d("A", "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
 		*/
-		Toast.makeText(getApplicationContext(), "Start"+2.3, Toast.LENGTH_SHORT).show();
 		startService(new Intent(this, LocationTracker.class));
-		tv.setText("Connected to wifi");
+		tv.setText("Connected to wifbi");
 		setContentView(tv);		
-	}
+	}	
 }

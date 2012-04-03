@@ -3,17 +3,17 @@ package com.cos598b;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
-
-import com.cos598b.Consts;
 
 public class LocationTracker extends IntentService {
 	/* 
@@ -61,6 +61,9 @@ public class LocationTracker extends IntentService {
 	
 	/* buffer for sending data to backend */
 	private DataPoint[] loc_buf = new DataPoint[Consts.buf_size];
+	
+	/* handler for printing to Toast */
+	Handler toastHandler; 
 	
 	/*
 	 ************************************ FUNCTIONS **********************************
@@ -188,21 +191,31 @@ public class LocationTracker extends IntentService {
 	 */
 	@Override
 	protected void onHandleIntent(Intent intent) {
+		toastHandler.post(new DisplayToast("Hello service"));
 		lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		final long startTime = System.currentTimeMillis();
 		
 		// if GPS is disabled, ask user to turn it on // XXX : 1
 		if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 			Intent gpsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+			gpsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			startActivity(gpsIntent);
 		}
 		
+		// dummy locations for debugging
+		Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+		if (location != null) {toastHandler.post(new DisplayToast("Last GPS: " + location.getLatitude() + " " + location.getLongitude() + " " + location.getBearing()));}
+		//Log.d("Last GPS", location.getLatitude() + " " + location.getLongitude() + " " + location.getBearing() + " " + location.getAccuracy());
+		location = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+		if (location != null) {toastHandler.post(new DisplayToast("Last network: " + location.getLatitude() + " " + location.getLongitude() + " " + location.getBearing()));}
+		//Log.d("Last Network", location.getLatitude() + " " + location.getLongitude() + " " + location.getBearing() + " " + location.getAccuracy());
+		
 		// create new listener
 		listener = new LocationListener() {			
+			@Override
 			public void onLocationChanged(Location location) {
-				CharSequence text = "A: " + "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude();
-				Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
-				//Log.d("A", "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
+				CharSequence text = "A: " + "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude() + " Bearing: " + location.getBearing();
+				toastHandler.post(new DisplayToast(text.toString()));
 				lat_last = location.getLatitude();
 				lng_last = location.getLongitude();
 			}
@@ -217,10 +230,10 @@ public class LocationTracker extends IntentService {
 	    
 		// create another new listener (for the 5-second delay required for finding the direction)
 		listener2 = new LocationListener() {
+			@Override
 			public void onLocationChanged(Location location) {
-				CharSequence text = "B: " + "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude();
-				Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
-				Log.d("B", "Time: " + ((System.currentTimeMillis()-startTime)/1000) + "Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
+				CharSequence text = "B: " + "Time: " + ((System.currentTimeMillis()-startTime)/1000) + " Lat: " + location.getLatitude() + " Long: " + location.getLongitude() + " Bearing: " + location.getBearing();
+				toastHandler.post(new DisplayToast(text.toString()));
 				addDataPoint(location.getLatitude(), location.getLongitude());
 			}
 			
@@ -232,34 +245,64 @@ public class LocationTracker extends IntentService {
 		
 	    };
 	    
-	    // start the listeners 5 seconds apart
+	    // start the listeners 5 seconds apart	    
 	    lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, Consts.time_granularity*1000, Consts.dist_granularity, listener);
+	    lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, Consts.time_granularity*1000, Consts.dist_granularity, listener);
+	    toastHandler.post(new DisplayToast("First listener started"));
 	    long timeout = System.currentTimeMillis() + (Consts.time_diff * 1000);
 	    while (System.currentTimeMillis() < timeout) { // wait time_diff seconds
 	    	synchronized(this) {
-	    		try { wait(timeout - System.currentTimeMillis()); } catch(Exception e) {}
+	    		try { wait(timeout - System.currentTimeMillis()); } catch(Exception e) { }
 	    	}
 	    }
 	    lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, Consts.time_granularity*1000, Consts.dist_granularity, listener2);
-	    
+	    lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, Consts.time_granularity*1000, Consts.dist_granularity, listener2);
+	    toastHandler.post(new DisplayToast("Second listener started")); 
 	    
 	    // run for 100 seconds // DEBUG
-	    timeout = System.currentTimeMillis() + (150*1000);
-	    while(System.currentTimeMillis() < timeout) {}   
+	    timeout = System.currentTimeMillis() + (100*1000);
+	    while(System.currentTimeMillis() < timeout) {
+	    	synchronized(this) {
+	    		try { wait(timeout - System.currentTimeMillis()); } catch(Exception e) { }
+	    	}
+	    }  
 	}
-	
+
+	/* 
+	 * on creating the service
+	 */
+	@Override
+	public void onCreate()
+	{
+		super.onCreate();
+		toastHandler = new Handler();
+	}
 	/*
 	 * on destroying the service
 	 */
-	// TESTING ONLY //DEBUG
 	@Override
 	public void onDestroy() {
+		// stop listeners
 		lm.removeUpdates(listener);
 		lm.removeUpdates(listener2);
 		lm = null;
 		
-		Toast.makeText(getApplicationContext(), "End" + "A" + 2, Toast.LENGTH_SHORT).show();
-		//Log.d("Close", "Shutting service");
+		toastHandler.post(new DisplayToast("End" + "A" + 2));
 		super.onDestroy();
+	}
+	
+	/*
+	 * display a toast from within non-UI thread
+	 */
+	private class DisplayToast implements Runnable { 
+		String text;
+
+		public DisplayToast(String text){
+			this.text = text;
+		}
+
+		public void run(){
+			Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+		}
 	}
 }
