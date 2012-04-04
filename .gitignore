@@ -20,3 +20,6 @@ gen/
 
 # Local configuration file (sdk path, etc)
 android/local.properties
+
+# eclipse files
+.settings/
