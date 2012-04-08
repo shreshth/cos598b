@@ -115,13 +115,15 @@ public class MarkovService extends IntentService {
      * When the timer expires and we still dont have location/scan updates
      */
     public synchronized static void onNoResult(Context context) {
-        mLocation = null;
-        mWifiFound = null;
         if (locationListener != null) {
             LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
             lm.removeUpdates(locationListener);
         }
-        newPoint(null, null, false, context);
+        if (mLocation == null || mWifiFound == null) {
+            newPoint(null, null, false, context);
+        }
+        mLocation = null;
+        mWifiFound = null;
     }
 
     /*
@@ -132,8 +134,6 @@ public class MarkovService extends IntentService {
         mWifiFound = gotWifi(w.getScanResults());
         if (mLocation != null) {
             newPoint(mLocation, mWifiFound, true, context);
-            mLocation = null;
-            mWifiFound = null;
         }
     }
 
@@ -158,8 +158,6 @@ public class MarkovService extends IntentService {
         mLocation = location;
         if (mWifiFound != null) {
             newPoint(mLocation, mWifiFound, true, context);
-            mLocation = null;
-            mWifiFound = null;
         }
     }
 

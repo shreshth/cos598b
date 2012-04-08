@@ -12,23 +12,20 @@ class AddData(webapp.RequestHandler):
         # Read in comma seperated values and split them into arrays
         lat = str.split(str(self.request.get('lat')),',')
         lng = str.split(str(self.request.get('lng')),',')
-        lat_delta = str.split(str(self.request.get('lat_delta')),',')
-        lng_delta = str.split(str(self.request.get('lng_delta')),',')
+        bearing = str.split(str(self.request.get('bearing')),',')
         time = str.split(str(self.request.get('time')),',')
         # Read user id
         user_id = self.request.get('user_id')
         # All arrays must have the same size
-        if ((len(lat) != len (lng)) or (len(lat) or len (lat_delta)) or (len(lat) != len (lng_delta)) or (len(lat) != len (time))):
+        if ((len(lat) != len (lng)) or (len(lat) != len (bearing)) or (len(lat) != len (time))):
             self.error(400)
         # Add each data point to the database
         for i in range(len(lat)):
             location = db.GeoPt(lat[i], lng[i])
-            # Calculate angle
-            angle = atan2(float(lat_delta[i]), float(lng_delta[i])) 
             # time >= 0 means wifi was obtained eventually
             wifi = (time >= 0)
             # Store data point
-            point = entities.Point(location=location, angle=angle, wifi=wifi, time=int(time[i]), user_id = user_id)
+            point = entities.Point(location=location, bearing=float(bearing[i]), wifi=wifi, time=int(time[i]), user_id = user_id)
             point.put()
 
 application = webapp.WSGIApplication([('/.*', AddData)], debug=True)
