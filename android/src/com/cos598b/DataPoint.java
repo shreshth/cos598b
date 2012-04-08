@@ -7,10 +7,10 @@ public class DataPoint {
     private double lat;
     private double lng;
     private float bearing;         // 0 - 360 degrees
-    private boolean wifi_found;
+    private boolean wifi_found;    // whether wifi was found at this point
     private double timestamp;      // ms
     private int time_till_wifi;    // seconds
-    private boolean valid;       // whether the data point is valid or not (because we did not have gps or something)
+    private boolean valid;         // whether the data point is valid or not (because we did not have gps or something)
 
     public DataPoint(double lat, double lng, float bearing, boolean wifi_found, double timestamp, int time_till_wifi) {
         this.lat = lat;
@@ -23,7 +23,7 @@ public class DataPoint {
     }
 
     // return an invalid datapoint
-    public DataPoint getInvalid() {
+    public static DataPoint getInvalid() {
         DataPoint dp = new DataPoint(0,0,0,false,0,Integer.MAX_VALUE);
         dp.valid = false;
         return dp;

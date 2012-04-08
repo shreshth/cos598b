@@ -17,4 +17,7 @@ public class Consts {
 
     // unique ID for device
     public static final String device_id = Settings.Secure.ANDROID_ID;
+
+    // Number of data points to send in one http request
+    public static final int http_batch_limit = 10;
 }

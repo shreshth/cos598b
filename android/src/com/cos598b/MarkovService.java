@@ -71,7 +71,7 @@ public class MarkovService extends IntentService {
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location arg0) {
-                onLocation(arg0);
+                onLocation(arg0, MarkovService.this);
             }
             @Override
             public void onProviderDisabled(String arg0) {
@@ -121,7 +121,7 @@ public class MarkovService extends IntentService {
             LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
             lm.removeUpdates(locationListener);
         }
-        newPoint(null, null, true);
+        newPoint(null, null, false, context);
     }
 
     /*
@@ -131,7 +131,7 @@ public class MarkovService extends IntentService {
         WifiManager w = (WifiManager) context.getSystemService (Context.WIFI_SERVICE);
         mWifiFound = gotWifi(w.getScanResults());
         if (mLocation != null) {
-            newPoint(mLocation, mWifiFound, false);
+            newPoint(mLocation, mWifiFound, true, context);
             mLocation = null;
             mWifiFound = null;
         }
@@ -154,10 +154,10 @@ public class MarkovService extends IntentService {
     /*
      * called when gps results are available
      */
-    private synchronized static void onLocation(Location location) {
+    private synchronized static void onLocation(Location location, Context context) {
         mLocation = location;
         if (mWifiFound != null) {
-            newPoint(mLocation, mWifiFound, true);
+            newPoint(mLocation, mWifiFound, true, context);
             mLocation = null;
             mWifiFound = null;
         }
@@ -173,20 +173,19 @@ public class MarkovService extends IntentService {
      * wifiFound: whether we had access to wifi at this point (not eventually)
      * 
      */
-    private static void newPoint(Location location, Boolean wifiFound, boolean valid) {
-        /*
+    private static void newPoint(Location location, Boolean wifiFound, boolean valid, Context context) {
         // store the data point to be removed
         DataPoint point_temp = loc_steps[Consts.num_loc_steps-1];
         int steps_till_wifi = Integer.MAX_VALUE;
-        if (wifiFound) {
-            steps_till_wifi = 0;
+        if (wifiFound != null && wifiFound) {
+            steps_till_wifi = Consts.num_loc_steps - 1;
         }
 
         // move stuff up
         for (int i = Consts.num_loc_steps-1; i > 0; i--) {
             loc_steps[i] = loc_steps[i-1];
             if (loc_steps[i-1] != null && point_temp != null) {
-                if (loc_steps[i-1].getWifiFound() && steps_till_wifi == Integer.MAX_VALUE)
+                if (loc_steps[i-1].getWifiFound())
                 {
                     steps_till_wifi = Consts.num_loc_steps - (i-1); // first point thereafter that Wifi was found
                 }
@@ -196,11 +195,18 @@ public class MarkovService extends IntentService {
         if (point_temp != null) { point_temp.setTimeTillWifi(steps_till_wifi*Consts.time_granularity); }
 
         // add new point
-        DataPoint point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0);
+        DataPoint point_add;
+        if (valid) {
+            point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0);
+        } else {
+            point_add = DataPoint.getInvalid();
+        }
         loc_steps[0] = point_add;
 
-        DatabaseUtils.addPoint(point_temp);
-         */
+        if (point_temp != null && point_temp.isValid()) {
+            DatabaseHelper db = new DatabaseHelper(context);
+            db.addPoint(point_temp);
+        }
     }
 
     /*
