@@ -10,6 +10,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteStatement;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -69,6 +70,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.insert(TABLE_POINTS, null, values);
             db.close(); // Closing database connection
         }
+    }
+
+    // Get the number of rows in the database
+    public int getNumRows() {
+        String sql = "SELECT COUNT(*) FROM " + TABLE_POINTS;
+        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteStatement statement = db.compileStatement(sql);
+        int count = (int) statement.simpleQueryForLong();
+        return count;
     }
 
     // Retrieve a few data points and remove them from the database

@@ -68,11 +68,19 @@ public class Home extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        TextView tv = new TextView(this);
-
         Intent intent = new Intent(this, MarkovService.class);
         intent.putExtra("METHOD", "start");
         startService(new Intent(this, MarkovService.class));
-        setContentView(tv);
+        setContentView(R.layout.main);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        DatabaseHelper db = new DatabaseHelper(this);
+        int num_points = db.getNumRows();
+
+        TextView tv = (TextView) findViewById(R.id.num_rows);
+        tv.setText(Integer.toString(num_points));
     }
 }

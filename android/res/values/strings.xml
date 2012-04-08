@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DroiDTN</string>
+    <string name="num_points">Number of data points collected:</string>
+    <string name="send_points">Send data points to Server</string>
+    <string name="get_pred">Get predictions from Server</string>
 </resources>

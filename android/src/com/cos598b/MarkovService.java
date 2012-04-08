@@ -198,14 +198,17 @@ public class MarkovService extends IntentService {
         DataPoint point_add;
         if (valid) {
             point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0);
+            Utils.toast(context, "new point:" + point_add.toString());
         } else {
             point_add = DataPoint.getInvalid();
+            Utils.toast(context, "invalid point");
         }
         loc_steps[0] = point_add;
 
         if (point_temp != null && point_temp.isValid()) {
             DatabaseHelper db = new DatabaseHelper(context);
             db.addPoint(point_temp);
+            Utils.toast(context, "old point:" + point_temp.toString());
         }
     }
 
