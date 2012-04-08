@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="hello">Coming soon!</string>
-    <string name="app_name">Unnamed COS598B Project</string>
-
+    <string name="app_name">DroiDTN</string>
 </resources>
