@@ -22,10 +22,10 @@ function addpoints() {
         var lng = point[1];
         var angle = point[2];
         var wifi = point[3];
-        lng_delta = (Math.cos(angle)) * r;
-        lat_delta = (Math.sin(angle)) * r;
+        var lat2 = Math.asin( Math.sin(lat)*Math.cos(r) + Math.cos(lat)*Math.sin(r)*Math.cos(angle) );
+        var lng2 = lng + Math.atan2(Math.sin(angle)*Math.sin(r)*Math.cos(lat), Math.cos(r)-Math.sin(lat)*Math.sin(lat2));
         var location1 = new google.maps.LatLng(lat, lng);
-        var location2 = new google.maps.LatLng(lat + lat_delta, lng + lng_delta);
+        var location2 = new google.maps.LatLng(lat2, lng2);
         var path = [location1, location2];
         var color = (wifi) ? "#2500DB" : "#FF0000";
         (new google.maps.Polyline({
