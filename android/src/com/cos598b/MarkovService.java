@@ -174,7 +174,7 @@ public class MarkovService extends IntentService {
     private static void newPoint(Location location, Boolean wifiFound, boolean valid, Context context) {
         // store the data point to be removed
         DataPoint point_temp = loc_steps[Consts.num_loc_steps-1];
-        int steps_till_wifi = Integer.MAX_VALUE;
+        int steps_till_wifi = -1;
         if (wifiFound != null && wifiFound) {
             steps_till_wifi = Consts.num_loc_steps - 1;
         }
@@ -189,24 +189,21 @@ public class MarkovService extends IntentService {
                 }
             }
         }
-        // at this point, steps_till_wifi is the number of steps till wifi was found (or Integer.MAX_VALUE if not found)
+        // at this point, steps_till_wifi is the number of steps till wifi was found (or -1 if not found)
         if (point_temp != null) { point_temp.setTimeTillWifi(steps_till_wifi*Consts.time_granularity); }
 
         // add new point
         DataPoint point_add;
         if (valid) {
             point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0);
-            Utils.toast(context, "new point:" + point_add.toString());
         } else {
             point_add = DataPoint.getInvalid();
-            Utils.toast(context, "invalid point");
         }
         loc_steps[0] = point_add;
 
         if (point_temp != null && point_temp.isValid()) {
             DatabaseHelper db = new DatabaseHelper(context);
             db.addPoint(point_temp);
-            Utils.toast(context, "old point:" + point_temp.toString());
         }
     }
 

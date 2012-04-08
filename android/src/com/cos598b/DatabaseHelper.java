@@ -97,11 +97,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
 
-        int greatestTimeStamp = 0;
+        long greatestTimeStamp = 0;
         // looping through all rows and adding to list
         if (cursor.moveToFirst()) {
             do {
-                int timestamp = Integer.parseInt(cursor.getString(5));
+                long timestamp = Long.parseLong(cursor.getString(4));
                 if (timestamp > greatestTimeStamp) {
                     greatestTimeStamp = timestamp;
                 }
@@ -114,7 +114,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
 
         // Delete retrieved points
-        db.delete(TABLE_POINTS, KEY_TIMESTAMP + " <= ?", new String[] {Integer.toString(greatestTimeStamp)});
+        db.delete(TABLE_POINTS, KEY_TIMESTAMP + " <= ?", new String[] {Long.toString(greatestTimeStamp)});
 
         data.put(KEY_LAT, Utils.implode(latList.toArray(new String[0]), ","));
         data.put(KEY_LNG, Utils.implode(lngList.toArray(new String[0]), ","));

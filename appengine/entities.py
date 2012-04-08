@@ -8,6 +8,7 @@ class Point(db.Model):
     bearing = db.FloatProperty(required=True)                             # Direction of movement in radians (+pi to -pi)
     wifi = db.BooleanProperty(required=True)                            # Whether wifi was obtained eventually
     time = db.IntegerProperty(default=None, required=False)             # if wifi == true
+    timestamp = db.IntegerProperty(required=True)                       # the timestamp (time since 1970) in ms
     user_id = db.StringProperty(required=True)                          # Unique ID for each user
 
 """

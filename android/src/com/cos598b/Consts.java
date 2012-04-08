@@ -20,4 +20,10 @@ public class Consts {
 
     // Number of data points to send in one http request
     public static final int http_batch_limit = 10;
+
+    // URL for sending data to backend
+    public static final String send_points_url = "http://cos598b.appspot.com/add_data";
+
+    // number of tries to make for an http request before giving up
+    public static final int http_max_attemps = 3;
 }

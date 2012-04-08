@@ -13,6 +13,20 @@
 
 package com.cos598b;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +34,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.TextView;
 
 
@@ -65,6 +81,54 @@ public class Home extends Activity {
         // impossibru
     }
 
+    // send data points to back-end
+    private void sendPoints() {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run(){
+                DatabaseHelper db = new DatabaseHelper(Home.this);
+                while (db.getNumRows() > 0) {
+                    Map<String, String> data = db.popFew();
+                    // Create a new HttpClient and Post Header
+                    HttpClient httpclient = new DefaultHttpClient();
+                    HttpPost httppost = new HttpPost(Consts.send_points_url);
+                    try {
+                        // Add data
+                        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+                        nameValuePairs.add(new BasicNameValuePair("lat", data.get(DatabaseHelper.KEY_LAT)));
+                        nameValuePairs.add(new BasicNameValuePair("lng", data.get(DatabaseHelper.KEY_LNG)));
+                        nameValuePairs.add(new BasicNameValuePair("bearing", data.get(DatabaseHelper.KEY_BEARING)));
+                        nameValuePairs.add(new BasicNameValuePair("timestamp", data.get(DatabaseHelper.KEY_TIMESTAMP)));
+                        nameValuePairs.add(new BasicNameValuePair("time", data.get(DatabaseHelper.KEY_TIME_TILL_WIFI)));
+                        nameValuePairs.add(new BasicNameValuePair("user_id", Consts.device_id));
+                        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+                        // make attempts
+                        int attempt = 0;
+                        while (attempt < Consts.http_max_attemps) {
+                            HttpResponse response = httpclient.execute(httppost);
+                            if (response.getStatusLine().getStatusCode() == 200) {
+                                break;
+                            } else {
+                                attempt = attempt + 1;
+                            }
+                        }
+                    } catch (ClientProtocolException e) {
+                        Utils.toast(Home.this, e.toString());
+                    } catch (IOException e) {
+                        Utils.toast(Home.this, e.toString());
+                    }
+                }
+            }
+        });
+        thread.start();
+    }
+
+    // fetch predictions from back-end
+    private void getPredictions() {
+
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,6 +136,18 @@ public class Home extends Activity {
         intent.putExtra("METHOD", "start");
         startService(new Intent(this, MarkovService.class));
         setContentView(R.layout.main);
+        findViewById(R.id.send_button).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                sendPoints();
+            }
+        });
+        findViewById(R.id.get_button).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                getPredictions();
+            }
+        });
     }
 
     @Override
