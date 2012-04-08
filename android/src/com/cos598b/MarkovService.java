@@ -170,7 +170,7 @@ public class MarkovService extends IntentService {
      *  location, scan etc info which could happen if we are inside a building, etc). if
      *  it is invalid then location and wifiFound are null
      * location: location returned by gps location
-     * wifiFound: whether we had access to wifi at this point
+     * wifiFound: whether we had access to wifi at this point (not eventually)
      * 
      */
     private static void newPoint(Location location, Boolean wifiFound, boolean valid) {

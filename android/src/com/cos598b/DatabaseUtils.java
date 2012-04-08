@@ -13,4 +13,11 @@ public class DatabaseUtils {
     public static void addPoint(DataPoint point) {
 
     }
+
+    /*
+     * Get dummy data point
+     */
+    public static DataPoint dummy() {
+        return new DataPoint(10,11,12,true,0,10);
+    }
 }

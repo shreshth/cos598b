@@ -19,6 +19,7 @@ public class DataPoint {
         this.wifi_found = wifi_found;
         this.timestamp = timestamp;
         this.time_till_wifi = time_till_wifi;
+        this.valid = true;
     }
 
     // return an invalid datapoint
