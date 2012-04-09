@@ -1,9 +1,6 @@
 TO DOS:
-1. Popup window for turning GPS on
-2. If user doesn't turn GPS on, then quit?
-3. If GPS not returning a location (e.g. indoors), then? In this case, it just ignores all this data.
-4. So far, only checking if Wifi is *connected*. Should check if any open Wifi is available?
-5. If there is movement in 60 seconds, but no movement in 5-second span, we can't detect direction. Currently, it uses the lat/long from the previous 60 second span (less accurate since more motion in 60 seconds than 5). Is this okay, or should we just discard that data?
-6. What if we go out of range of GPS and then get WiFi (e.g. enter a building and then get WiFi). In this case, we wouldn't get any location updates, and will not be capture the fact that WiFi was found.
-7. Corner cases when adding new points. How to add first point?
-8. Replacement policy for the buffer of data points to send?
+- Popup window for turning GPS on
+- If user doesn't turn GPS on, then quit?
+- What if we go out of range of GPS and then get WiFi (e.g. enter a building and then get WiFi). In this case, we wouldn't get any location updates, and will not be capture the fact that WiFi was found.
+- Corner cases when adding new points. How to add first point?
+- Check wifi power level as well to see if it is too low
