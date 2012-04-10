@@ -3,8 +3,8 @@ package com.cos598b;
 import java.util.List;
 
 import android.app.AlarmManager;
-import android.app.IntentService;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Criteria;
@@ -15,8 +15,9 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 
-public class MarkovService extends IntentService {
+public class MarkovService extends Service {
 
     // alarm codes
     private static int WAIT_ALARM_CODE = 101;
@@ -30,38 +31,19 @@ public class MarkovService extends IntentService {
 
     private static Location mLocation = null;
     private static Boolean mWifiFound = null;
-    private static boolean mCollectingData = false;
+    private static boolean mCollectingData;
+    private static boolean mServiceRunning;
 
     /* handler for printing to Toast */
     Handler toastHandler;
 
-    /*
-     * constructor
-     */
-    public MarkovService() {
-        super("MarkovService");
-    }
-
     @Override
     public int onStartCommand (Intent intent, int flags, int startId) {
-        onStart();
-        return super.onStartCommand(intent, flags, startId);
-    }
-
-    /*
-     * how to handle intents
-     */
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        if (!intent.hasExtra("METHOD")) {
-            return;
-        }
-        String method = intent.getExtras().getString("METHOD");
-        if (method == null) {
-            return;
-        } else if (method.equals("start")) {
+        if (mServiceRunning == false) {
             onStart();
+            mServiceRunning = true;
         }
+        return super.onStartCommand(intent, flags, startId);
     }
 
     /*
@@ -224,6 +206,7 @@ public class MarkovService extends IntentService {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        mServiceRunning = false;
     }
 
     // helper for showing the toast notification
@@ -245,6 +228,11 @@ public class MarkovService extends IntentService {
         public void run(){
             Utils.toast(getApplicationContext(), text);
         }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
 }

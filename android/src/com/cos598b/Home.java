@@ -131,9 +131,10 @@ public class Home extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Intent intent = new Intent(this, MarkovService.class);
-        intent.putExtra("METHOD", "start");
+
+        // start markov service for collecting data points
         startService(new Intent(this, MarkovService.class));
+
         setContentView(R.layout.main);
         findViewById(R.id.send_button).setOnClickListener(new OnClickListener() {
             @Override
