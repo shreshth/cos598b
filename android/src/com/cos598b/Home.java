@@ -99,7 +99,7 @@ public class Home extends Activity {
                         nameValuePairs.add(new BasicNameValuePair("bearing", data.get(DatabaseHelper.KEY_BEARING)));
                         nameValuePairs.add(new BasicNameValuePair("timestamp", data.get(DatabaseHelper.KEY_TIMESTAMP)));
                         nameValuePairs.add(new BasicNameValuePair("time", data.get(DatabaseHelper.KEY_TIME_TILL_WIFI)));
-                        nameValuePairs.add(new BasicNameValuePair("user_id", Consts.device_id));
+                        nameValuePairs.add(new BasicNameValuePair("user_id", Utils.getDeviceID(Home.this)));
                         httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
                         // make attempts

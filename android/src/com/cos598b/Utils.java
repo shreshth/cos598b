@@ -1,6 +1,7 @@
 package com.cos598b;
 
 import android.content.Context;
+import android.provider.Settings.Secure;
 import android.widget.Toast;
 
 public class Utils {
@@ -37,5 +38,9 @@ public class Utils {
         return output;
     }
 
+    // return device ID (unique for each android device)
+    public static String getDeviceID(Context context) {
+        return Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
+    }
 
 }
