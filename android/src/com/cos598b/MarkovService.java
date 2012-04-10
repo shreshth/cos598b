@@ -30,6 +30,7 @@ public class MarkovService extends IntentService {
 
     private static Location mLocation = null;
     private static Boolean mWifiFound = null;
+    private static boolean mCollectingData = false;
 
     /* handler for printing to Toast */
     Handler toastHandler;
@@ -96,6 +97,7 @@ public class MarkovService extends IntentService {
     public synchronized static void onAlarm(Context context) {
         mLocation = null;
         mWifiFound = null;
+        mCollectingData = true;
         // start wifi scan
         WifiManager wm = (WifiManager) context.getSystemService (Context.WIFI_SERVICE);
         wm.startScan();
@@ -120,10 +122,11 @@ public class MarkovService extends IntentService {
             lm.removeUpdates(locationListener);
         }
         if (mLocation == null || mWifiFound == null) {
-            newPoint(null, null, false, context);
+            newPoint(mLocation, mWifiFound, false, context);
         }
         mLocation = null;
         mWifiFound = null;
+        mCollectingData = false;
     }
 
     /*
@@ -132,7 +135,7 @@ public class MarkovService extends IntentService {
     public synchronized static void onScanResults(Context context) {
         WifiManager w = (WifiManager) context.getSystemService (Context.WIFI_SERVICE);
         mWifiFound = gotWifi(w.getScanResults());
-        if (mLocation != null) {
+        if (mLocation != null && mCollectingData) {
             newPoint(mLocation, mWifiFound, true, context);
         }
     }
@@ -156,7 +159,7 @@ public class MarkovService extends IntentService {
      */
     private synchronized static void onLocation(Location location, Context context) {
         mLocation = location;
-        if (mWifiFound != null) {
+        if (mWifiFound != null && mCollectingData) {
             newPoint(mLocation, mWifiFound, true, context);
         }
     }
@@ -172,38 +175,37 @@ public class MarkovService extends IntentService {
      * 
      */
     private static void newPoint(Location location, Boolean wifiFound, boolean valid, Context context) {
-        // store the data point to be removed
-        DataPoint point_temp = loc_steps[Consts.num_loc_steps-1];
-        int steps_till_wifi = -1;
+        // if wifi was found, mark earlier points as having eventually found wifi
         if (wifiFound != null && wifiFound) {
-            steps_till_wifi = Consts.num_loc_steps - 1;
+            for (int i = 0; i < Consts.num_loc_steps; i++) {
+                if (loc_steps[i] != null && loc_steps[i].getTimeTillWifi() == -1) {
+                    loc_steps[i].setTimeTillWifi(Consts.time_granularity * (i+1));
+                }
+            }
         }
+
+        // store the data point to be removed
+        DataPoint point_last = loc_steps[Consts.num_loc_steps-1];
 
         // move stuff up
         for (int i = Consts.num_loc_steps-1; i > 0; i--) {
             loc_steps[i] = loc_steps[i-1];
-            if (loc_steps[i-1] != null && point_temp != null) {
-                if (loc_steps[i-1].getWifiFound())
-                {
-                    steps_till_wifi = Consts.num_loc_steps - (i-1); // first point thereafter that Wifi was found
-                }
-            }
         }
-        // at this point, steps_till_wifi is the number of steps till wifi was found (or -1 if not found)
-        if (point_temp != null) { point_temp.setTimeTillWifi(steps_till_wifi*Consts.time_granularity); }
 
-        // add new point
+        // add new point to markov model
         DataPoint point_add;
         if (valid) {
-            point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0);
+            int time_till_wifi = wifiFound ? 0 : -1;
+            point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), time_till_wifi);
         } else {
             point_add = DataPoint.getInvalid();
         }
         loc_steps[0] = point_add;
 
-        if (point_temp != null && point_temp.isValid()) {
+        // add last data point to database
+        if (point_last != null && point_last.isValid()) {
             DatabaseHelper db = new DatabaseHelper(context);
-            db.addPoint(point_temp);
+            db.addPoint(point_last);
         }
     }
 
