@@ -86,9 +86,8 @@ public class Home extends Activity {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run(){
-                DatabaseHelper db = new DatabaseHelper(Home.this);
-                while (db.getNumRows() > 0) {
-                    Map<String, String> data = db.popFew();
+                while (DatabaseHelper.getNumRows(Home.this) > 0) {
+                    Map<String, String> data = DatabaseHelper.popFew(Home.this);
                     // Create a new HttpClient and Post Header
                     HttpClient httpclient = new DefaultHttpClient();
                     HttpPost httppost = new HttpPost(Consts.send_points_url);
@@ -153,9 +152,12 @@ public class Home extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        DatabaseHelper db = new DatabaseHelper(this);
-        int num_points = db.getNumRows();
+        refreshNumPoints();
+    }
 
+    // refresh the number of points collected
+    private void refreshNumPoints() {
+        int num_points = DatabaseHelper.getNumRows(this);
         TextView tv = (TextView) findViewById(R.id.num_rows);
         tv.setText(Integer.toString(num_points));
     }

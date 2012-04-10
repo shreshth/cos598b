@@ -55,7 +55,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // Adding new data point
-    public void addPoint(DataPoint point) {
+    private void addPoint(DataPoint point) {
         if (point.isValid()) {
             SQLiteDatabase db = this.getWritableDatabase();
 
@@ -73,17 +73,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // Get the number of rows in the database
-    public int getNumRows() {
+    private int getNumRows() {
         String sql = "SELECT COUNT(*) FROM " + TABLE_POINTS;
         SQLiteDatabase db = this.getWritableDatabase();
         SQLiteStatement statement = db.compileStatement(sql);
         int count = (int) statement.simpleQueryForLong();
+        db.close(); // Closing database connection
         return count;
     }
 
     // Retrieve a few data points and remove them from the database
     // Returns a comma separated string of fields
-    public Map<String, String> popFew() {
+    private Map<String, String> popFew() {
         Map<String, String> data = new HashMap<String, String>();
         List<String> latList = new ArrayList<String>();
         List<String> lngList = new ArrayList<String>();
@@ -112,9 +113,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 timetillwifiList.add(cursor.getString(5));
             } while (cursor.moveToNext());
         }
+        cursor.close();
 
         // Delete retrieved points
         db.delete(TABLE_POINTS, KEY_TIMESTAMP + " <= ?", new String[] {Long.toString(greatestTimeStamp)});
+        db.close(); // Closing database connection
 
         data.put(KEY_LAT, Utils.implode(latList.toArray(new String[0]), ","));
         data.put(KEY_LNG, Utils.implode(lngList.toArray(new String[0]), ","));
@@ -123,5 +126,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         data.put(KEY_TIME_TILL_WIFI, Utils.implode(timetillwifiList.toArray(new String[0]), ","));
 
         return data;
+    }
+
+    // --------------- Synchronized access to whole class ----------------------------
+    public synchronized static void addPoint(Context context, DataPoint point) {
+        DatabaseHelper db = new DatabaseHelper(context);
+        db.addPoint(point);
+    }
+
+    public synchronized static Map<String, String> popFew(Context context) {
+        DatabaseHelper db = new DatabaseHelper(context);
+        return db.popFew();
+    }
+
+    public synchronized static int getNumRows(Context context) {
+        DatabaseHelper db = new DatabaseHelper(context);
+        return db.getNumRows();
     }
 }

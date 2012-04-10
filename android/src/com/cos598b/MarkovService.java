@@ -204,8 +204,7 @@ public class MarkovService extends IntentService {
 
         // add last data point to database
         if (point_last != null && point_last.isValid()) {
-            DatabaseHelper db = new DatabaseHelper(context);
-            db.addPoint(point_last);
+            DatabaseHelper.addPoint(context, point_last);
         }
     }
 
