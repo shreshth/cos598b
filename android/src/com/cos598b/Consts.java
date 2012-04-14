@@ -11,8 +11,11 @@ public class Consts {
     // maximum wait for a gps location / wifi scan to return (in seconds)
     public static final int MAX_WAIT = 10;
 
+    // total length of markov model in seconds
+    public static final int MARKOV_TOTAL_SECONDS = 10*60;
+
     // how many steps of location data to store
-    public static final int NUM_MARKOV_STEPS = 10;
+    public static final int NUM_MARKOV_STEPS = MARKOV_TOTAL_SECONDS / TIME_GRANULARITY;
 
     // supported wireless SSID's
     public static final String[] SSID_WHITELIST = {"puwireless", "csvapornet"};
