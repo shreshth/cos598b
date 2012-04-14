@@ -185,7 +185,7 @@ public class MarkovService extends Service {
             // add new point
             if (valid) {
                 DataPoint point_add;
-                point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0);
+                point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0, location.getSpeed(), location.getAccuracy());
                 Utils.toast(context, "valid point: location found, wifi available");
                 DatabaseHelper.addPoint(context, point_add);
                 Utils.toast(context, "store point");
@@ -206,7 +206,7 @@ public class MarkovService extends Service {
             // add new point to markov model
             DataPoint point_add;
             if (valid) {
-                point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), -1);
+                point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), -1, location.getSpeed(), location.getAccuracy());
                 Utils.toast(context, "valid point: location found, wifi unavailable");
             } else {
                 point_add = DataPoint.getInvalid();

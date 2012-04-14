@@ -34,6 +34,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
@@ -99,6 +100,8 @@ public class Home extends Activity {
                         nameValuePairs.add(new BasicNameValuePair("bearing", data.get(DatabaseHelper.KEY_BEARING)));
                         nameValuePairs.add(new BasicNameValuePair("timestamp", data.get(DatabaseHelper.KEY_TIMESTAMP)));
                         nameValuePairs.add(new BasicNameValuePair("time", data.get(DatabaseHelper.KEY_TIME_TILL_WIFI)));
+                        nameValuePairs.add(new BasicNameValuePair("speed", data.get(DatabaseHelper.KEY_SPEED)));
+                        nameValuePairs.add(new BasicNameValuePair("accuracy", data.get(DatabaseHelper.KEY_ACCURACY)));
                         nameValuePairs.add(new BasicNameValuePair("user_id", Utils.getDeviceID(Home.this)));
                         httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -113,9 +116,9 @@ public class Home extends Activity {
                             }
                         }
                     } catch (ClientProtocolException e) {
-                        Utils.toast(Home.this, e.toString());
+                        Log.d("Network error", e.toString());
                     } catch (IOException e) {
-                        Utils.toast(Home.this, e.toString());
+                        Log.d("Network error", e.toString());
                     }
                 }
             }

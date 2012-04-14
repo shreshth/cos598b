@@ -30,6 +30,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String KEY_BEARING = "bearing";
     public static final String KEY_TIMESTAMP = "timestamp";
     public static final String KEY_TIME_TILL_WIFI = "time_till_wifi";
+    public static final String KEY_SPEED = "speed";
+    public static final String KEY_ACCURACY = "accuracy";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -41,7 +43,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         + KEY_ID + " INTEGER PRIMARY KEY," + KEY_LAT + " REAL,"
                         + KEY_LNG + " REAL," + KEY_BEARING + " REAL,"
                         + KEY_TIMESTAMP + " INTEGER,"
-                        + KEY_TIME_TILL_WIFI + " INTEGER" + ")";
+                        + KEY_TIME_TILL_WIFI + " INTEGER,"
+                        + KEY_SPEED + " REAL," + KEY_ACCURACY + " REAL" + ")";
         db.execSQL(CREATE_POINTS_TABLE);
     }
 
@@ -65,6 +68,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             values.put(KEY_BEARING, point.getBearing());
             values.put(KEY_TIMESTAMP, point.getTimestamp());
             values.put(KEY_TIME_TILL_WIFI, point.getTimeTillWifi());
+            values.put(KEY_SPEED, point.getSpeed());
+            values.put(KEY_ACCURACY, point.getAccuracy());
 
             // Inserting Row
             db.insert(TABLE_POINTS, null, values);
@@ -91,6 +96,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<String> bearingList = new ArrayList<String>();
         List<String> timestampList = new ArrayList<String>();
         List<String> timetillwifiList = new ArrayList<String>();
+        List<String> speedList = new ArrayList<String>();
+        List<String> accuracyList = new ArrayList<String>();
 
         // Select All Query
         String selectQuery = "SELECT * FROM " + TABLE_POINTS + " ORDER BY " + KEY_TIMESTAMP + " ASC LIMIT " + Consts.HTTP_BATCH_LIMIT;
@@ -111,6 +118,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 bearingList.add(cursor.getString(3));
                 timestampList.add(cursor.getString(4));
                 timetillwifiList.add(cursor.getString(5));
+                speedList.add(cursor.getString(6));
+                accuracyList.add(cursor.getString(7));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -124,6 +133,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         data.put(KEY_BEARING, Utils.implode(bearingList.toArray(new String[0]), ","));
         data.put(KEY_TIMESTAMP, Utils.implode(timestampList.toArray(new String[0]), ","));
         data.put(KEY_TIME_TILL_WIFI, Utils.implode(timetillwifiList.toArray(new String[0]), ","));
+        data.put(KEY_SPEED, Utils.implode(speedList.toArray(new String[0]), ","));
+        data.put(KEY_ACCURACY, Utils.implode(accuracyList.toArray(new String[0]), ","));
 
         return data;
     }

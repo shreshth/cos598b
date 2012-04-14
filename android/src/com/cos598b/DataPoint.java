@@ -11,8 +11,10 @@ public class DataPoint {
     private double timestamp;      // ms
     private int time_till_wifi;    // seconds
     private boolean valid;         // whether the data point is valid or not (because we did not have gps or something)
+    private float speed;           // speed
+    private float accuracy;        // accuracy of gps reading
 
-    public DataPoint(double lat, double lng, float bearing, boolean wifi_found, double timestamp, int time_till_wifi) {
+    public DataPoint(double lat, double lng, float bearing, boolean wifi_found, double timestamp, int time_till_wifi, float speed, float accuracy) {
         this.lat = lat;
         this.lng = lng;
         this.bearing = bearing;
@@ -20,11 +22,13 @@ public class DataPoint {
         this.timestamp = timestamp;
         this.time_till_wifi = time_till_wifi;
         this.valid = true;
+        this.speed = speed;
+        this.accuracy = accuracy;
     }
 
     // return an invalid datapoint
     public static DataPoint getInvalid() {
-        DataPoint dp = new DataPoint(0,0,0,false,0,Integer.MAX_VALUE);
+        DataPoint dp = new DataPoint(0,0,0,false,0,Integer.MAX_VALUE, 0, 0);
         dp.valid = false;
         return dp;
     }
@@ -35,6 +39,8 @@ public class DataPoint {
     public boolean getWifiFound() { return this.wifi_found; }
     public double getTimestamp() { return this.timestamp; }
     public int getTimeTillWifi() { return this.time_till_wifi; }
+    public float getSpeed() { return this.speed; }
+    public float getAccuracy() { return this.accuracy; }
     public void setTimeTillWifi(int n) { this.time_till_wifi = n; }
     public boolean isValid() { return this.valid; }
 }
