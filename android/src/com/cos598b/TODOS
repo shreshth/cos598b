@@ -1,6 +1,0 @@
-TO DOS:
-- Popup window for turning GPS on
-- If user doesn't turn GPS on, then quit?
-- What if we go out of range of GPS and then get WiFi (e.g. enter a building and then get WiFi). In this case, we wouldn't get any location updates, and will not be capture the fact that WiFi was found.
-- Corner cases when adding new points. How to add first point?
-- Check wifi power level as well to see if it is too low
