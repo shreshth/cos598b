@@ -21,6 +21,7 @@ handlers:
 
 - url: /map
   script: map.py
+  login: admin
 
 - url: /learn
   script: ai.py
