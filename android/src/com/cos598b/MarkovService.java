@@ -126,10 +126,12 @@ public class MarkovService extends Service {
      * Helper function for determining if wifi is available
      */
     private static boolean gotWifi(List<ScanResult> list) {
-        for (ScanResult result : list) {
-            for (String ssid : Consts.SSID_WHITELIST) {
-                if (result.SSID.equals(ssid) && result.level >= Consts.MIN_WIFI_POWER) {
-                    return true;
+        if (list != null) {
+            for (ScanResult result : list) {
+                for (String ssid : Consts.SSID_WHITELIST) {
+                    if (result.SSID.equals(ssid) && result.level >= Consts.MIN_WIFI_POWER) {
+                        return true;
+                    }
                 }
             }
         }
@@ -168,7 +170,7 @@ public class MarkovService extends Service {
                     // add to database
                     if (loc_steps[i].isValid()) {
                         DatabaseHelper.addPoint(context, loc_steps[i]);
-                        Utils.toast(context, "store point");
+                        Utils.toast_test(context, "store point");
                     }
 
                     // remove from markov model
@@ -186,11 +188,11 @@ public class MarkovService extends Service {
             if (valid) {
                 DataPoint point_add;
                 point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0, location.getSpeed(), location.getAccuracy());
-                Utils.toast(context, "valid point: location found, wifi available");
+                Utils.toast_test(context, "valid point: location found, wifi available");
                 DatabaseHelper.addPoint(context, point_add);
-                Utils.toast(context, "store point");
+                Utils.toast_test(context, "store point");
             } else {
-                Utils.toast(context, "invalid point: location not found, wifi available");
+                Utils.toast_test(context, "invalid point: location not found, wifi available");
             }
         }
         // if wifi was not found
@@ -207,17 +209,17 @@ public class MarkovService extends Service {
             DataPoint point_add;
             if (valid) {
                 point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), -1, location.getSpeed(), location.getAccuracy());
-                Utils.toast(context, "valid point: location found, wifi unavailable");
+                Utils.toast_test(context, "valid point: location found, wifi unavailable");
             } else {
                 point_add = DataPoint.getInvalid();
-                Utils.toast(context, "invalid pointL location not found, wifi unavailable");
+                Utils.toast_test(context, "invalid pointL location not found, wifi unavailable");
             }
             loc_steps[0] = point_add;
 
             // add last data point to database
             if (point_last != null && point_last.isValid()) {
                 DatabaseHelper.addPoint(context, point_last);
-                Utils.toast(context, "store point");
+                Utils.toast_test(context, "store point");
             }
         }
     }
@@ -258,7 +260,7 @@ public class MarkovService extends Service {
 
         @Override
         public void run(){
-            Utils.toast(getApplicationContext(), text);
+            Utils.toast_test(getApplicationContext(), text);
         }
     }
 

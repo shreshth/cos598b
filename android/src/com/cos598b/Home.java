@@ -142,7 +142,11 @@ public class Home extends Activity {
         findViewById(R.id.send_button).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                sendPoints();
+                if (isConnectedWiFi() || isConnectedMobile()) {
+                    sendPoints();
+                } else {
+                    Utils.toast(Home.this, "Internet Connection is unavailable. Please try again later.");
+                }
             }
         });
         findViewById(R.id.get_button).setOnClickListener(new OnClickListener() {

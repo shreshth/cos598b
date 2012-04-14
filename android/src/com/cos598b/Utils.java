@@ -7,12 +7,17 @@ import android.widget.Toast;
 
 public class Utils {
 
-    // Show a toast notification
-    public static void toast(Context context, String text) {
+    // Show a toast notification only in test mode
+    public static void toast_test(Context context, String text) {
         if (Consts.TEST_MODE) {
             Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
             Log.d("Toast Message", text);
         }
+    }
+
+    // Show a toast notification, even if we are not in test_mode
+    public static void toast(Context context, String text) {
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
     }
 
     /**
