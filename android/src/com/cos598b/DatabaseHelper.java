@@ -93,7 +93,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<String> timetillwifiList = new ArrayList<String>();
 
         // Select All Query
-        String selectQuery = "SELECT * FROM " + TABLE_POINTS + " ORDER BY " + KEY_TIMESTAMP + " ASC LIMIT " + Consts.http_batch_limit;
+        String selectQuery = "SELECT * FROM " + TABLE_POINTS + " ORDER BY " + KEY_TIMESTAMP + " ASC LIMIT " + Consts.HTTP_BATCH_LIMIT;
 
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);

@@ -24,7 +24,7 @@ public class MarkovService extends Service {
     private static int SCHEDULED_ALARM_CODE = 102;
 
     /* location model - Markov chain of 10 steps */
-    private static DataPoint[] loc_steps = new DataPoint[Consts.num_loc_steps];
+    private static DataPoint[] loc_steps = new DataPoint[Consts.NUM_MARKOV_STEPS];
 
     /* location tracking */
     private static LocationListener locationListener;
@@ -70,7 +70,7 @@ public class MarkovService extends Service {
         AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent newintent = new Intent(this, ScheduledAlarmReceiver.class);
         PendingIntent operation = PendingIntent.getBroadcast(this, SCHEDULED_ALARM_CODE, newintent, PendingIntent.FLAG_UPDATE_CURRENT);
-        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), Consts.time_granularity*1000, operation);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), Consts.TIME_GRANULARITY*1000, operation);
     }
 
     /*
@@ -92,7 +92,7 @@ public class MarkovService extends Service {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent newintent = new Intent(context, WaitAlarmReceiver.class);
         PendingIntent operation = PendingIntent.getBroadcast(context, WAIT_ALARM_CODE, newintent, PendingIntent.FLAG_UPDATE_CURRENT);
-        am.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + Consts.max_wait*1000, operation);
+        am.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + Consts.MAX_WAIT*1000, operation);
     }
 
     /*
@@ -127,8 +127,8 @@ public class MarkovService extends Service {
      */
     private static boolean gotWifi(List<ScanResult> list) {
         for (ScanResult result : list) {
-            for (String ssid : Consts.ssids) {
-                if (result.SSID.equals(ssid)) {
+            for (String ssid : Consts.SSID_WHITELIST) {
+                if (result.SSID.equals(ssid) && result.level >= Consts.MIN_WIFI_POWER) {
                     return true;
                 }
             }
@@ -159,18 +159,18 @@ public class MarkovService extends Service {
     private static void newPoint(Location location, Boolean wifiFound, boolean valid, Context context) {
         // if wifi was found, mark earlier points as having eventually found wifi
         if (wifiFound != null && wifiFound) {
-            for (int i = 0; i < Consts.num_loc_steps; i++) {
+            for (int i = 0; i < Consts.NUM_MARKOV_STEPS; i++) {
                 if (loc_steps[i] != null && loc_steps[i].getTimeTillWifi() == -1) {
-                    loc_steps[i].setTimeTillWifi(Consts.time_granularity * (i+1));
+                    loc_steps[i].setTimeTillWifi(Consts.TIME_GRANULARITY * (i+1));
                 }
             }
         }
 
         // store the data point to be removed
-        DataPoint point_last = loc_steps[Consts.num_loc_steps-1];
+        DataPoint point_last = loc_steps[Consts.NUM_MARKOV_STEPS-1];
 
         // move stuff up
-        for (int i = Consts.num_loc_steps-1; i > 0; i--) {
+        for (int i = Consts.NUM_MARKOV_STEPS-1; i > 0; i--) {
             loc_steps[i] = loc_steps[i-1];
         }
 

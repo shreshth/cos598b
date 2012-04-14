@@ -90,7 +90,7 @@ public class Home extends Activity {
                     Map<String, String> data = DatabaseHelper.popFew(Home.this);
                     // Create a new HttpClient and Post Header
                     HttpClient httpclient = new DefaultHttpClient();
-                    HttpPost httppost = new HttpPost(Consts.send_points_url);
+                    HttpPost httppost = new HttpPost(Consts.SEND_POINTS_URL);
                     try {
                         // Add data
                         List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
@@ -104,7 +104,7 @@ public class Home extends Activity {
 
                         // make attempts
                         int attempt = 0;
-                        while (attempt < Consts.http_max_attemps) {
+                        while (attempt < Consts.HTTP_MAX_ATTEMPTS) {
                             HttpResponse response = httpclient.execute(httppost);
                             if (response.getStatusLine().getStatusCode() == 200) {
                                 break;
