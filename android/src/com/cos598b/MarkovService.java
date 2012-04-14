@@ -157,36 +157,68 @@ public class MarkovService extends Service {
      * 
      */
     private static void newPoint(Location location, Boolean wifiFound, boolean valid, Context context) {
-        // if wifi was found, mark earlier points as having eventually found wifi
+        // if wifi was found
         if (wifiFound != null && wifiFound) {
+            // mark earlier points as having eventually found wifi
             for (int i = 0; i < Consts.NUM_MARKOV_STEPS; i++) {
                 if (loc_steps[i] != null && loc_steps[i].getTimeTillWifi() == -1) {
+                    // mark as having found wifi
                     loc_steps[i].setTimeTillWifi(Consts.TIME_GRANULARITY * (i+1));
+
+                    // add to database
+                    if (loc_steps[i].isValid()) {
+                        DatabaseHelper.addPoint(context, loc_steps[i]);
+                        Utils.toast(context, "store point");
+                    }
+
+                    // remove from markov model
+                    loc_steps[i] = null;
                 }
             }
+
+            // move stuff up
+            for (int i = Consts.NUM_MARKOV_STEPS-1; i > 0; i--) {
+                loc_steps[i] = loc_steps[i-1];
+            }
+            loc_steps[0] = null;
+
+            // add new point
+            if (valid) {
+                DataPoint point_add;
+                point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), 0);
+                Utils.toast(context, "valid point: location found, wifi available");
+                DatabaseHelper.addPoint(context, point_add);
+                Utils.toast(context, "store point");
+            } else {
+                Utils.toast(context, "invalid point: location not found, wifi available");
+            }
         }
+        // if wifi was not found
+        else {
+            // store the data point to be removed
+            DataPoint point_last = loc_steps[Consts.NUM_MARKOV_STEPS-1];
 
-        // store the data point to be removed
-        DataPoint point_last = loc_steps[Consts.NUM_MARKOV_STEPS-1];
+            // move stuff up
+            for (int i = Consts.NUM_MARKOV_STEPS-1; i > 0; i--) {
+                loc_steps[i] = loc_steps[i-1];
+            }
 
-        // move stuff up
-        for (int i = Consts.NUM_MARKOV_STEPS-1; i > 0; i--) {
-            loc_steps[i] = loc_steps[i-1];
-        }
+            // add new point to markov model
+            DataPoint point_add;
+            if (valid) {
+                point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), -1);
+                Utils.toast(context, "valid point: location found, wifi unavailable");
+            } else {
+                point_add = DataPoint.getInvalid();
+                Utils.toast(context, "invalid pointL location not found, wifi unavailable");
+            }
+            loc_steps[0] = point_add;
 
-        // add new point to markov model
-        DataPoint point_add;
-        if (valid) {
-            int time_till_wifi = wifiFound ? 0 : -1;
-            point_add = new DataPoint(location.getLatitude(), location.getLongitude(), location.getBearing(), wifiFound, System.currentTimeMillis(), time_till_wifi);
-        } else {
-            point_add = DataPoint.getInvalid();
-        }
-        loc_steps[0] = point_add;
-
-        // add last data point to database
-        if (point_last != null && point_last.isValid()) {
-            DatabaseHelper.addPoint(context, point_last);
+            // add last data point to database
+            if (point_last != null && point_last.isValid()) {
+                DatabaseHelper.addPoint(context, point_last);
+                Utils.toast(context, "store point");
+            }
         }
     }
 

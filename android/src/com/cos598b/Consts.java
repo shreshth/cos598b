@@ -30,4 +30,9 @@ public class Consts {
 
     // number of tries to make for an http request before giving up
     public static final int HTTP_MAX_ATTEMPTS = 3;
+
+    // ------------------------ Test Constants --------------------------------- //
+
+    // whether this is a test build
+    public static final boolean TEST_MODE = true;
 }
