@@ -36,6 +36,9 @@ public class Consts {
 
     // ------------------------ Test Constants --------------------------------- //
 
-    // whether this is a test build
-    public static final boolean TEST_MODE = true;
+    // testing messages etc will only appear on these phones
+    public static final String[] TEST_DEVICE_WHITELIST = {
+        "e8bce1e69b89be6f",      // Hamza's personal Phone
+        "892ff7ea98149a55",      // Galaxy Nexus we got for the project
+    };
 }

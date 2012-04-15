@@ -9,7 +9,7 @@ public class Utils {
 
     // Show a toast notification only in test mode
     public static void toast_test(Context context, String text) {
-        if (Consts.TEST_MODE) {
+        if (isTestMode(context)) {
             Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
         }
         Log.d("Toast Message", text);
@@ -19,6 +19,16 @@ public class Utils {
     public static void toast(Context context, String text) {
         Toast.makeText(context, text, Toast.LENGTH_LONG).show();
         Log.d("Toast Message", text);
+    }
+
+    // whether to enable test only features
+    public static boolean isTestMode(Context context) {
+        for (String allowed_device : Consts.TEST_DEVICE_WHITELIST) {
+            if (getDeviceID(context).equals(allowed_device)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
