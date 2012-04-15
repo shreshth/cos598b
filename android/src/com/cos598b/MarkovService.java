@@ -82,12 +82,22 @@ public class MarkovService extends Service {
         mCollectingData = true;
         // start wifi scan
         WifiManager wm = (WifiManager) context.getSystemService (Context.WIFI_SERVICE);
-        wm.startScan();
+        if (wm.isWifiEnabled()) {
+            wm.startScan();
+        } else {
+            // uh oh. wifi is probably off
+            Utils.toast(context, "DroidDTN: Cannot scan for wifi availability. Please check if wifi on.");
+        }
         // start gps scan
         LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        lm.requestSingleUpdate(criteria, locationListener, null);
+        try {
+            lm.requestSingleUpdate(criteria, locationListener, null);
+        } catch (Exception e) {
+            // uh oh. GPS is probably off
+            Utils.toast(context, "DroidDTN: Cannot request location. Please check if the GPS Setting is on.");
+        }
         // alarm for when we dont get location/scan in time
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent newintent = new Intent(context, WaitAlarmReceiver.class);
@@ -212,7 +222,7 @@ public class MarkovService extends Service {
                 Utils.toast_test(context, "valid point: location found, wifi unavailable");
             } else {
                 point_add = DataPoint.getInvalid();
-                Utils.toast_test(context, "invalid pointL location not found, wifi unavailable");
+                Utils.toast_test(context, "invalid point: location not found, wifi unavailable");
             }
             loc_steps[0] = point_add;
 

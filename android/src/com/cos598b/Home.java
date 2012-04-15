@@ -145,7 +145,7 @@ public class Home extends Activity {
                 if (isConnectedWiFi() || isConnectedMobile()) {
                     sendPoints();
                 } else {
-                    Utils.toast(Home.this, "Internet Connection is unavailable. Please try again later.");
+                    Utils.toast(Home.this, "DroiDTN: Internet Connection is unavailable. Please try again later.");
                 }
             }
         });
