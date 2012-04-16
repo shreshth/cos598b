@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -34,6 +36,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -157,6 +160,15 @@ public class Home extends Activity {
         });
     }
 
+    // handler and runnable to update number of points
+    private Handler updateHandler = new Handler();
+    private Runnable updateRunnable = new Runnable() {
+    	@Override
+    	public void run() {
+    		refreshNumPoints();
+    	}
+    };
+    
     @Override
     protected void onResume() {
         super.onResume();
@@ -168,5 +180,14 @@ public class Home extends Activity {
         int num_points = DatabaseHelper.getNumRows(this);
         TextView tv = (TextView) findViewById(R.id.num_rows);
         tv.setText(Integer.toString(num_points));
+        updateHandler.postDelayed(updateRunnable, Consts.REFRESH_RATE*1000); // update at twice the rate of points being found
+        Log.d("Refresh", "Refreshed number of datapoints");
+    }  
+    
+    @Override
+    protected void onPause() {
+    	super.onPause();
+    	updateHandler.removeCallbacks(updateRunnable);
+    	Log.d("Refresh", "Stop refreshing");
     }
 }

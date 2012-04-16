@@ -22,6 +22,9 @@ public class Consts {
 
     // minimum wifi power level
     public static final int MIN_WIFI_POWER = -80;
+    
+    // refresh rate for number of datapoints on main activity (in seconds) 
+    public static final int REFRESH_RATE = 10;
 
     // ------------------------ HTTP Constants --------------------------------- //
 
@@ -40,5 +43,6 @@ public class Consts {
     public static final String[] TEST_DEVICE_WHITELIST = {
         "e8bce1e69b89be6f",      // Hamza's personal Phone
         "892ff7ea98149a55",      // Galaxy Nexus we got for the project
+        "72890e4ed7e94cae"		 // Shreshth's personal phone
     };
 }
