@@ -17,8 +17,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -30,13 +28,18 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -137,7 +140,7 @@ public class Home extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        
         // start markov service for collecting data points
         startService(new Intent(this, MarkovService.class));
 
@@ -158,6 +161,14 @@ public class Home extends Activity {
                 getPredictions();
             }
         });
+        
+        // if GPS is disabled, ask user to turn it on 
+    	// Runs only once, when activity is created
+    	// XXX: Alternately could put it in onResume() to constantly remind user
+    	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    	if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+    		showDialog(0);
+    	}
     }
 
     // handler and runnable to update number of points
@@ -169,13 +180,31 @@ public class Home extends Activity {
     	}
     };
     
+    /**
+     * Called every time activity gets focus
+     */
     @Override
     protected void onResume() {
         super.onResume();
+        
         refreshNumPoints();
     }
-
-    // refresh the number of points collected
+    
+    /**
+     * Called whenever activity loses focus
+     * Stops the refreshing of number of data points
+     */
+    @Override
+    protected void onPause() {
+    	super.onPause();
+    	updateHandler.removeCallbacks(updateRunnable);
+    	Log.d("Refresh", "Stop refreshing");
+    }
+    
+    /**
+     * refresh the number of points collected
+     * sets timer to refresh points again according to REFRESH_RATE
+     */
     private void refreshNumPoints() {
         int num_points = DatabaseHelper.getNumRows(this);
         TextView tv = (TextView) findViewById(R.id.num_rows);
@@ -184,10 +213,31 @@ public class Home extends Activity {
         Log.d("Refresh", "Refreshed number of datapoints");
     }  
     
+    /**
+     * Dialog to ask user to turn on GPS
+     */
     @Override
-    protected void onPause() {
-    	super.onPause();
-    	updateHandler.removeCallbacks(updateRunnable);
-    	Log.d("Refresh", "Stop refreshing");
+    protected Dialog onCreateDialog(int id) {
+    	AlertDialog alert;
+    	if (id == 0) {
+    		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    		builder.setMessage("GPS is turned off. Would you like to turn it on?")
+    			   .setCancelable(false)
+    			   .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+    				   public void onClick(DialogInterface dialog, int id) {
+    					   Intent gpsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+    					   gpsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    					   startActivity(gpsIntent);
+    				   }
+    			   })
+    			   .setNegativeButton("No", new DialogInterface.OnClickListener() {
+    				   public void onClick(DialogInterface dialog, int id) {
+    					   dialog.cancel();
+    				   }
+    			   });
+    		alert = builder.create();       
+    	}
+    	else alert = null;
+    	return alert;
     }
 }

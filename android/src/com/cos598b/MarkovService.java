@@ -3,9 +3,11 @@ package com.cos598b;
 import java.util.List;
 
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Criteria;
 import android.location.Location;
@@ -18,7 +20,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
-import android.util.Log;
 
 public class MarkovService extends Service {
 
@@ -52,16 +53,7 @@ public class MarkovService extends Service {
     /*
      * called when the service is started
      */
-    private void onStart() {
-    	// if GPS is disabled, ask user to turn it on 
-    	// this is a one-time only message. Beyond that, it would be annoying to the user.
-    	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-        	Intent gpsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-        	gpsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        	startActivity(gpsIntent);
-        }
-    	
+    private void onStart() {   	
         // setup listener for location updates
         locationListener = new LocationListener() {
             @Override
