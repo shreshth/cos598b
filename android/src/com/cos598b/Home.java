@@ -30,6 +30,7 @@ import org.apache.http.message.BasicNameValuePair;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -39,6 +40,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -47,6 +49,10 @@ import android.widget.TextView;
 
 
 public class Home extends Activity {
+	// Dialog IDs 
+	private final int DIALOG_GPS_OFF = 0;       // dialog for when GPS is off
+	private final int DIALOG_PROGRESS_SEND = 1; // dialog for progress bar, when sending data
+	
 
     /* is WiFi connected */
     private boolean isConnectedWiFi() {
@@ -86,49 +92,79 @@ public class Home extends Activity {
 
     private void stop3G() {
         // impossibru
-    }
+    }   
+    
+    /**
+     * thread to send points to backend
+     */
+    private class SendPointsThread extends Thread {
+    	Handler msgHandler;
+    	
+    	public SendPointsThread(Handler h) {
+    		msgHandler = h;
+    	}
+    	
+    	@Override
+        public void run(){
+    		int total_send = DatabaseHelper.getNumRows(Home.this);
+    		int sent = 0;
+            while (DatabaseHelper.getNumRows(Home.this) > 0) {
+                Map<String, String> data = DatabaseHelper.popFew(Home.this);
+                // Create a new HttpClient and Post Header
+                HttpClient httpclient = new DefaultHttpClient();
+                HttpPost httppost = new HttpPost(Consts.SEND_POINTS_URL);
+                try {
+                    // Add data
+                    List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+                    nameValuePairs.add(new BasicNameValuePair("lat", data.get(DatabaseHelper.KEY_LAT)));
+                    nameValuePairs.add(new BasicNameValuePair("lng", data.get(DatabaseHelper.KEY_LNG)));
+                    nameValuePairs.add(new BasicNameValuePair("bearing", data.get(DatabaseHelper.KEY_BEARING)));
+                    nameValuePairs.add(new BasicNameValuePair("timestamp", data.get(DatabaseHelper.KEY_TIMESTAMP)));
+                    nameValuePairs.add(new BasicNameValuePair("time", data.get(DatabaseHelper.KEY_TIME_TILL_WIFI)));
+                    nameValuePairs.add(new BasicNameValuePair("speed", data.get(DatabaseHelper.KEY_SPEED)));
+                    nameValuePairs.add(new BasicNameValuePair("accuracy", data.get(DatabaseHelper.KEY_ACCURACY)));
+                    nameValuePairs.add(new BasicNameValuePair("user_id", Utils.getDeviceID(Home.this)));
+                    httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-    // send data points to back-end
-    private void sendPoints() {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run(){
-                while (DatabaseHelper.getNumRows(Home.this) > 0) {
-                    Map<String, String> data = DatabaseHelper.popFew(Home.this);
-                    // Create a new HttpClient and Post Header
-                    HttpClient httpclient = new DefaultHttpClient();
-                    HttpPost httppost = new HttpPost(Consts.SEND_POINTS_URL);
-                    try {
-                        // Add data
-                        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-                        nameValuePairs.add(new BasicNameValuePair("lat", data.get(DatabaseHelper.KEY_LAT)));
-                        nameValuePairs.add(new BasicNameValuePair("lng", data.get(DatabaseHelper.KEY_LNG)));
-                        nameValuePairs.add(new BasicNameValuePair("bearing", data.get(DatabaseHelper.KEY_BEARING)));
-                        nameValuePairs.add(new BasicNameValuePair("timestamp", data.get(DatabaseHelper.KEY_TIMESTAMP)));
-                        nameValuePairs.add(new BasicNameValuePair("time", data.get(DatabaseHelper.KEY_TIME_TILL_WIFI)));
-                        nameValuePairs.add(new BasicNameValuePair("speed", data.get(DatabaseHelper.KEY_SPEED)));
-                        nameValuePairs.add(new BasicNameValuePair("accuracy", data.get(DatabaseHelper.KEY_ACCURACY)));
-                        nameValuePairs.add(new BasicNameValuePair("user_id", Utils.getDeviceID(Home.this)));
-                        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-                        // make attempts
-                        int attempt = 0;
-                        while (attempt < Consts.HTTP_MAX_ATTEMPTS) {
-                            HttpResponse response = httpclient.execute(httppost);
-                            if (response.getStatusLine().getStatusCode() == 200) {
-                                break;
-                            } else {
-                                attempt = attempt + 1;
-                            }
+                    // make attempts
+                    int attempt = 0;
+                    while (attempt < Consts.HTTP_MAX_ATTEMPTS) {
+                        HttpResponse response = httpclient.execute(httppost);
+                        if (response.getStatusLine().getStatusCode() == 200) {
+                            break;
+                        } else {
+                            attempt = attempt + 1;
                         }
-                    } catch (ClientProtocolException e) {
-                        Log.d("Network error", e.toString());
-                    } catch (IOException e) {
-                        Log.d("Network error", e.toString());
                     }
+                    Message msg = msgHandler.obtainMessage();
+                    msg.arg1 = (++sent)/total_send;
+                    msgHandler.sendMessage(msg);
+                } catch (ClientProtocolException e) {
+                    Log.d("Network error", e.toString());
+                } catch (IOException e) {
+                    Log.d("Network error", e.toString());
                 }
             }
-        });
+        }
+    }
+    
+    SendPointsThread sendPointsThread;
+    ProgressDialog progressDialog;
+    
+    final Handler progressHandler = new Handler() {
+    	public void handleMessage(Message msg) {
+            int total = msg.arg1;
+            progressDialog.setProgress(total);
+            if (total >= 100){
+                dismissDialog(DIALOG_PROGRESS_SEND);
+            }
+        }
+    };
+    
+    // send data points to back-end
+    private void sendPoints() {
+        SendPointsThread thread = new SendPointsThread(progressHandler);
+        showDialog(DIALOG_PROGRESS_SEND);
         thread.start();
     }
 
@@ -167,7 +203,7 @@ public class Home extends Activity {
     	// XXX: Alternately could put it in onResume() to constantly remind user
     	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-    		showDialog(0);
+    		showDialog(DIALOG_GPS_OFF);
     	}
     }
 
@@ -218,8 +254,10 @@ public class Home extends Activity {
      */
     @Override
     protected Dialog onCreateDialog(int id) {
-    	AlertDialog alert;
-    	if (id == 0) {
+    	AlertDialog alert = null;
+    	switch (id) {
+    	// if GPS is off
+    	case DIALOG_GPS_OFF: 
     		AlertDialog.Builder builder = new AlertDialog.Builder(this);
     		builder.setMessage("GPS is turned off. Would you like to turn it on?")
     			   .setCancelable(false)
@@ -235,9 +273,17 @@ public class Home extends Activity {
     					   dialog.cancel();
     				   }
     			   });
-    		alert = builder.create();       
+    		alert = builder.create();   
+    		break;
+    		
+    	// progress bar for sending data
+    	case DIALOG_PROGRESS_SEND:
+    		progressDialog = new ProgressDialog(getApplicationContext());
+    		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+    		progressDialog.setMessage("Sending...");
+    		progressDialog.setCancelable(false);
+    		break;
     	}
-    	else alert = null;
     	return alert;
     }
 }
