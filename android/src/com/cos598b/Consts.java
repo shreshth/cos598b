@@ -23,7 +23,7 @@ public class Consts {
     // minimum wifi power level
     public static final int MIN_WIFI_POWER = -80;
 
-    // ------------------------ HTPP Constants --------------------------------- //
+    // ------------------------ HTTP Constants --------------------------------- //
 
     // Number of data points to send in one http request
     public static final int HTTP_BATCH_LIMIT = 10;

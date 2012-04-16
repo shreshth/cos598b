@@ -12,10 +12,13 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.Settings;
+import android.util.Log;
 
 public class MarkovService extends Service {
 
@@ -50,6 +53,15 @@ public class MarkovService extends Service {
      * called when the service is started
      */
     private void onStart() {
+    	// if GPS is disabled, ask user to turn it on 
+    	// this is a one-time only message. Beyond that, it would be annoying to the user.
+    	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+        	Intent gpsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        	gpsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        	startActivity(gpsIntent);
+        }
+    	
         // setup listener for location updates
         locationListener = new LocationListener() {
             @Override
@@ -86,7 +98,7 @@ public class MarkovService extends Service {
             wm.startScan();
         } else {
             // uh oh. wifi is probably off
-            Utils.toast(context, "DroidDTN: Cannot scan for wifi availability. Please check if wifi on.");
+            Utils.toast(context, "DroiDTN: Cannot scan for wifi availability. Please check if wifi on.");
         }
         // start gps scan
         LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
@@ -96,7 +108,7 @@ public class MarkovService extends Service {
             lm.requestSingleUpdate(criteria, locationListener, null);
         } catch (Exception e) {
             // uh oh. GPS is probably off
-            Utils.toast(context, "DroidDTN: Cannot request location. Please check if the GPS Setting is on.");
+            Utils.toast(context, "DroiDTN: Cannot request location. Please check if the GPS Setting is on.");
         }
         // alarm for when we dont get location/scan in time
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -126,7 +138,7 @@ public class MarkovService extends Service {
      */
     public synchronized static void onScanResults(Context context) {
         WifiManager w = (WifiManager) context.getSystemService (Context.WIFI_SERVICE);
-        mWifiFound = gotWifi(w.getScanResults());
+        mWifiFound = gotWifi(w.getScanResults(), context);
         if (mLocation != null && mCollectingData) {
             newPoint(mLocation, mWifiFound, true, context);
         }
@@ -135,13 +147,21 @@ public class MarkovService extends Service {
     /*
      * Helper function for determining if wifi is available
      */
-    private static boolean gotWifi(List<ScanResult> list) {
+    private static boolean gotWifi(List<ScanResult> list, Context context) {
         if (list != null) {
+        	WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        	List<WifiConfiguration> remembered = wm.getConfiguredNetworks();
             for (ScanResult result : list) {
-                for (String ssid : Consts.SSID_WHITELIST) {
-                    if (result.SSID.equals(ssid) && result.level >= Consts.MIN_WIFI_POWER) {
-                        return true;
-                    }
+                /*for (String ssid : Consts.SSID_WHITELIST) { */
+            	for (WifiConfiguration config : remembered) {
+            		if (config.SSID.charAt(0) == '\"' && config.SSID.charAt(config.SSID.length()-1) == '\"') { // SSIDs are usually in "", need to strip those out
+            			if (result.SSID.equals(config.SSID.substring(1, config.SSID.length()-1)) && result.level >= Consts.MIN_WIFI_POWER) {
+            				return true;
+            			}
+            		}
+            		else  if (result.SSID.equals(config.SSID) && result.level >= Consts.MIN_WIFI_POWER) {
+        				return true;
+        			}
                 }
             }
         }
